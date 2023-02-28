@@ -1,29 +1,32 @@
-public class Consumer implements Runnable {
-    private Buffer B;
+import java.math.BigInteger;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
-    public Consumer(Buffer B) {
-        this.B = B;
+public class Consumer implements Runnable {
+    private BlockingQueue<String> Q;
+    private String consumerName;
+
+    public Consumer(BlockingQueue<String> Q, String consumerName) {
+        this.Q = Q;
+        this.consumerName = consumerName;
     }
 
     public void run() {
-        while (true) {
-            synchronized (B) {
-                while (!B.isFull()) {
-                    try {
-                        B.wait();
-                    } catch (InterruptedException E) {
-                        System.out.println(E);
-                    }
+        boolean T = (!Finish.read() && !Q.isEmpty());
+        while (T) {
+
+            try {
+                String file_name = this.Q.poll(3, TimeUnit.SECONDS);
+                if (file_name == null) {
+                    Finish.write(true);
+                    break;
                 }
-                for (int i = 1; i <= Buffer.size; i++) {
-                    System.out.println("[receive] " + B.get());
-                    try {
-                        Thread.sleep(400);
-                    } catch (InterruptedException E) {
-                    }
-                }
-                B.notifyAll();
+                String res = new BigInteger(1, Digest.md5(file_name)).toString(16);
+                System.err.println("[" + this.consumerName + "] " + file_name + " : " + res);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
+
     }
 }

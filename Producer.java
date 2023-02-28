@@ -1,33 +1,24 @@
-class Producer implements Runnable {
-    private Buffer B;
+import java.io.File;
+import java.util.concurrent.BlockingQueue;
 
-    public Producer(Buffer B) {
-        this.B = B;
+class Producer implements Runnable {
+    private BlockingQueue<String> Q;
+
+    public Producer(BlockingQueue<String> Q) {
+        this.Q = Q;
     }
 
     public void run() {
-        int n = 0;
-        while (true) {
-            synchronized (this.B) {
-                while (!B.isEmpty()) {
-                    // Wait until being notified
-                    try {
-                        B.wait();
-                    } catch (InterruptedException E) {
-                        System.out.println(E);
-                    }
-                }
-                for (int i = 1; i <= Buffer.size; i++) {
-                    n++;
-                    System.out.println("[sending] Message " + n);
-                    this.B.add("Message " + n);
-                    try {
-                        Thread.sleep(600);
-                    } catch (InterruptedException E) {
-                    }
-                }
-                B.notifyAll();
+
+        try {
+            File directory = new File("data");
+            for (File f : directory.listFiles()) {
+                this.Q.put(f.getPath());
             }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
+
 }
